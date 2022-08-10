@@ -4,6 +4,11 @@
 
 - You must have Deno installed
 
+
+### Considerations
+
+- These scripts (migrate and source) are supported strictly as is and LD support cannot be expected for help running this
+
 ### Known Issues
 
 - Bug with 429 rate limiting. The request that is rate limited will still fail
@@ -12,6 +17,7 @@
   in various spots
 - Types in generally are very loose which Deno is not happy about but it runs as
   JavaScript overall compared to validating the TypeScript first
+- Due to the current API configuration, the environments count for a given project tops at 20 environments for a single project
 
 ### Sourcing data
 
