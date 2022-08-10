@@ -66,7 +66,6 @@ const projPost: any = {
   environments: buildEnv,
 }; //as ProjectPost
 
-// Need to validate logic
 if (projRep.defaultClientSideAvailability) {
   projPost.defaultClientSideAvailability =
     projRep.defaultClientSideAvailability;

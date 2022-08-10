@@ -31,7 +31,7 @@ if (projResp == null) {
 }
 const projData = await projResp.json();
 const projPath = `./source/project/${inputArgs.projKey}`;
-ensureDirSync(projPath); // void
+ensureDirSync(projPath); 
 
 await writeSourceData(projPath, "project", projData);
 
