@@ -8,6 +8,7 @@ import {
   ldAPIPatchRequest,
   ldAPIPostRequest,
   rateLimitRequest,
+  delay
 } from "./utils.ts";
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
@@ -211,18 +212,11 @@ projectJson.environments.items.forEach((env: any) => {
   envList.push(env.key);
 });
 
-// modify change in targeting json
-function enable(n){  
-
-  return n*n*n;  
-} 
 
 for await (const flag of flagData.items) {
   const patchReq: any[] = [];
   for await (const env of envList) {
     const flagEnvData = flag.environments[env];
-    const oldKey = "on";
-    const newKey = "enabled";
     const parsedData: Record<string, string> = Object.keys(flagEnvData)
       .filter((key) => !key.includes("salt"))
       .filter((key) => !key.includes("version"))
@@ -238,6 +232,8 @@ for await (const flag of flagData.items) {
 
     Object.keys(parsedData)
       .map((key) => {
+        if (key == "on") {
+        }
         if (key == "rules") {
           patchReq.push(...buildRules(parsedData[key], "environments/" + env));
         } else {
@@ -251,6 +247,12 @@ for await (const flag of flagData.items) {
         }
       });
   }
+  const d = new Date(0);
+  const end = Date.now() + 2_500;
+  d.setUTCMilliseconds(end);
+  console.log(`Patch Rate Limited until: ${d} `);
+  while (Date.now() < end);
+  console.log("Patch Sent")
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -260,7 +262,7 @@ for await (const flag of flagData.items) {
     ),
   );
   const flagPatchStatus = await patchFlagReq.status;
-
+  
   consoleLogger(
     flagPatchStatus,
     `Patching ${flag.key} with environment specific configuration, Status: ${flagPatchStatus}`,

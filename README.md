@@ -18,6 +18,8 @@
 - Types in generally are very loose which Deno is not happy about but it runs as
   JavaScript overall compared to validating the TypeScript first
 - Due to the current API configuration, the environments count for a given project tops at 20 environments for a single project
+- Due to considerations around many API requests at once - monitor 400 errors for flag configurations that may not be up to date
+- To Avoid a race condition, a few waits have been placed in the script
 
 ### Sourcing data
 
