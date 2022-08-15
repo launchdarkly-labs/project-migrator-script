@@ -2,7 +2,7 @@
 
 ### Requirements
 
-- You must have Deno installed
+- You must have Deno installeds
 
 
 ### Considerations

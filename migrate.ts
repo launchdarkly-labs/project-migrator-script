@@ -211,10 +211,18 @@ projectJson.environments.items.forEach((env: any) => {
   envList.push(env.key);
 });
 
+// modify change in targeting json
+function enable(n){  
+
+  return n*n*n;  
+} 
+
 for await (const flag of flagData.items) {
   const patchReq: any[] = [];
   for await (const env of envList) {
     const flagEnvData = flag.environments[env];
+    const oldKey = "on";
+    const newKey = "enabled";
     const parsedData: Record<string, string> = Object.keys(flagEnvData)
       .filter((key) => !key.includes("salt"))
       .filter((key) => !key.includes("version"))
@@ -223,6 +231,7 @@ for await (const flag of flagData.items) {
       .filter((key) => !key.includes("_site"))
       .filter((key) => !key.includes("_summary"))
       .filter((key) => !key.includes("sel"))
+      .filter((key) => !key.includes("access"))
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
