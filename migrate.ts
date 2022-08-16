@@ -255,31 +255,6 @@ for await (const flag of flagData.items) {
 
   }
 
-  // const d = new Date(0);
-  // const end = Date.now() + 2_500;
-  // d.setUTCMilliseconds(end);
-  // console.log(`Patch Rate Limited until: ${d} `);
-  // while (Date.now() < end);
-  // console.log("Patch Sent")
-  // const patchFlagReq = await rateLimitRequest(
-  //   ldAPIPatchRequest(
-  //     inputArgs.apikey,
-  //     inputArgs.domain,
-  //     `flags/${inputArgs.projKeyDest}/${flag.key}`,
-  //     patchReq,
-  //   ),
-  // );
-  // const flagPatchStatus = await patchFlagReq.status;
-  // if (flagPatchStatus > 200){
-  //   flagsDoubleCheck.push(flag.key)
-  // }
-  
-  // consoleLogger(
-  //   flagPatchStatus,
-  //   `Patching ${flag.key} with environment specific configuration, Status: ${flagPatchStatus}`,
-  // );
-}
-
 async function makePatchCall(flagKey, patchReq){
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
