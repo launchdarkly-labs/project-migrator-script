@@ -241,20 +241,22 @@ for await (const flag of flagData.items) {
     Object.keys(parsedData)
       .map((key) => {
         if (key == "rules") {
-          //patchReq.push(...buildRules(parsedData[key], "environments/" + env));
-          makePatchCall(flag.key, [buildRules(parsedData[key], "environments/" + env)])
+          patchReq.push(...buildRules(parsedData[key], "environments/" + env));
+          
           
         } else {
-          // patchReq.push(
-          //   buildPatch(
-          //     `environments/${env}/${key}`,
-          //     "replace",
-          //     parsedData[key],
-          //   ),
-          // );
-          makePatchCall(flag.key, [buildPatch(`environments/${env}/${key}`,"replace",parsedData[key],)])
+          patchReq.push(
+            buildPatch(
+              `environments/${env}/${key}`,
+              "replace",
+              parsedData[key],
+            ),
+          );
+          
         }
       });
+      makePatchCall(flag.key, patchReq)
+
   }
   // delay the patch requests to avoid race conditions when patching the flags
   // const d = new Date(0);
@@ -284,11 +286,11 @@ for await (const flag of flagData.items) {
 
 async function makePatchCall(flagKey, patchReq){
   // delay the patch requests to avoid race conditions when patching the flags
-  const d = new Date(0);
-  const end = Date.now() + 2_500;
-  d.setUTCMilliseconds(end);
-  console.log(`Patch Rate Limited until: ${d} `);
-  while (Date.now() < end);
+  // const d = new Date(0);
+  // const end = Date.now() + 2_500;
+  // d.setUTCMilliseconds(end);
+  // console.log(`Patch Rate Limited until: ${d} `);
+  // while (Date.now() < end);
   console.log("Patch Sent")
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
