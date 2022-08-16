@@ -213,6 +213,8 @@ projectJson.environments.items.forEach((env: any) => {
 });
 
 
+const flagsDoubleCheck: string[] = [];
+
 for await (const flag of flagData.items) {
   const patchReq: any[] = [];
   for await (const env of envList) {
@@ -245,13 +247,13 @@ for await (const flag of flagData.items) {
         }
       });
   }
-  // delay the patch requests to avoid race conditions when creating a new project
+  // delay the patch requests to avoid race conditions when patching the flags
   const d = new Date(0);
   const end = Date.now() + 2_500;
   d.setUTCMilliseconds(end);
   console.log(`Patch Rate Limited until: ${d} `);
   while (Date.now() < end);
-  console.log("Patch Sent")
+  //console.log("Patch Sent")
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -261,12 +263,19 @@ for await (const flag of flagData.items) {
     ),
   );
   const flagPatchStatus = await patchFlagReq.status;
-  // if (flagPatchStatus > 200){
-  //   console.log(patchFlagReq)
-  // }
+  if (flagPatchStatus > 200){
+    flagsDoubleCheck.push(flag.key)
+  }
   
   consoleLogger(
     flagPatchStatus,
     `Patching ${flag.key} with environment specific configuration, Status: ${flagPatchStatus}`,
   );
+}
+
+if(flagsDoubleCheck.length > 0) {
+  console.log("There are a few flags to double check as they have had an error or warning on the patch")
+  flagsDoubleCheck.forEach((flag) => {
+    console.log(` - ${flag}`)
+  });
 }
