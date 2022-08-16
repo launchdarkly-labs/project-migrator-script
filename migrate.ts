@@ -173,6 +173,7 @@ for await (const flag of flagData.items) {
     variations: newVariations,
     temporary: flag.temporary,
     tags: flag.tags,
+    description: flag.description
   };
 
   if (flag.client_side_availability) {
@@ -253,7 +254,7 @@ for await (const flag of flagData.items) {
   d.setUTCMilliseconds(end);
   console.log(`Patch Rate Limited until: ${d} `);
   while (Date.now() < end);
-  //console.log("Patch Sent")
+  console.log("Patch Sent")
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
