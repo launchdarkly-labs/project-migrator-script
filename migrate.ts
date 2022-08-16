@@ -232,8 +232,6 @@ for await (const flag of flagData.items) {
 
     Object.keys(parsedData)
       .map((key) => {
-        if (key == "on") {
-        }
         if (key == "rules") {
           patchReq.push(...buildRules(parsedData[key], "environments/" + env));
         } else {
@@ -247,6 +245,7 @@ for await (const flag of flagData.items) {
         }
       });
   }
+  // delay the patch requests to avoid race conditions when creating a new project
   const d = new Date(0);
   const end = Date.now() + 2_500;
   d.setUTCMilliseconds(end);
@@ -262,6 +261,9 @@ for await (const flag of flagData.items) {
     ),
   );
   const flagPatchStatus = await patchFlagReq.status;
+  // if (flagPatchStatus > 200){
+  //   console.log(patchFlagReq)
+  // }
   
   consoleLogger(
     flagPatchStatus,

@@ -53,7 +53,6 @@ export function ldAPIPatchRequest(
   path: string,
   body: any,
 ) {
-  delay(100)
   const req = new Request(
     `https://${domain}/api/v2/${path}`,
     {
