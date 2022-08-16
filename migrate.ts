@@ -218,12 +218,8 @@ const flagsDoubleCheck: string[] = [];
 var count = 0;
 
 for await (const flag of flagData.items) {
-  const patchReq: any[] = [];
   for await (const env of envList) {
-    // count = count + 1
-    // if(count > 3){
-    //   break
-    // }
+    const patchReq: any[] = [];
     const flagEnvData = flag.environments[env];
     const parsedData: Record<string, string> = Object.keys(flagEnvData)
       .filter((key) => !key.includes("salt"))
@@ -234,6 +230,8 @@ for await (const flag of flagData.items) {
       .filter((key) => !key.includes("_summary"))
       .filter((key) => !key.includes("sel"))
       .filter((key) => !key.includes("access"))
+      .filter((key) => !key.includes("_debugEventsUntilDate"))
+      .filter((key) => !key.startsWith("_"))
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
@@ -241,9 +239,7 @@ for await (const flag of flagData.items) {
     Object.keys(parsedData)
       .map((key) => {
         if (key == "rules") {
-          patchReq.push(...buildRules(parsedData[key], "environments/" + env));
-          
-          
+          patchReq.push(...buildRules(parsedData[key], "environments/" + env));  
         } else {
           patchReq.push(
             buildPatch(
@@ -258,7 +254,7 @@ for await (const flag of flagData.items) {
       await makePatchCall(flag.key, patchReq)
 
   }
-  // delay the patch requests to avoid race conditions when patching the flags
+
   // const d = new Date(0);
   // const end = Date.now() + 2_500;
   // d.setUTCMilliseconds(end);
@@ -285,14 +281,6 @@ for await (const flag of flagData.items) {
 }
 
 async function makePatchCall(flagKey, patchReq){
-  // var flagsDoubleCheck: string[] = [];
-  // //delay the patch requests to avoid race conditions when patching the flags
-  // const d = new Date(0);
-  // const end = Date.now() + 2_500;
-  // d.setUTCMilliseconds(end);
-  // console.log(`Patch Rate Limited until: ${d} `);
-  // while (Date.now() < end);
-  console.log("Patch Sent")
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -304,6 +292,10 @@ async function makePatchCall(flagKey, patchReq){
   const flagPatchStatus = await patchFlagReq.status;
   if (flagPatchStatus > 200){
     flagsDoubleCheck.push(flagKey)
+    consoleLogger(
+      flagPatchStatus,
+      `Patching ${flagKey} with environment specific configuration, Status: ${flagPatchStatus}`,
+    );
   }
 
   if (flagPatchStatus == 400) {
