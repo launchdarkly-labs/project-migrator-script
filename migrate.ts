@@ -255,6 +255,8 @@ for await (const flag of flagData.items) {
 
   }
 
+}
+
 async function makePatchCall(flagKey, patchReq){
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
