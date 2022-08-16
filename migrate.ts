@@ -215,10 +215,15 @@ projectJson.environments.items.forEach((env: any) => {
 
 
 const flagsDoubleCheck: string[] = [];
+var count = 0;
 
 for await (const flag of flagData.items) {
   const patchReq: any[] = [];
   for await (const env of envList) {
+    // count = count + 1
+    // if(count > 3){
+    //   break
+    // }
     const flagEnvData = flag.environments[env];
     const parsedData: Record<string, string> = Object.keys(flagEnvData)
       .filter((key) => !key.includes("salt"))
@@ -236,18 +241,48 @@ for await (const flag of flagData.items) {
     Object.keys(parsedData)
       .map((key) => {
         if (key == "rules") {
-          patchReq.push(...buildRules(parsedData[key], "environments/" + env));
+          //patchReq.push(...buildRules(parsedData[key], "environments/" + env));
+          makePatchCall(flag.key, [buildRules(parsedData[key], "environments/" + env)])
+          
         } else {
-          patchReq.push(
-            buildPatch(
-              `environments/${env}/${key}`,
-              "replace",
-              parsedData[key],
-            ),
-          );
+          // patchReq.push(
+          //   buildPatch(
+          //     `environments/${env}/${key}`,
+          //     "replace",
+          //     parsedData[key],
+          //   ),
+          // );
+          makePatchCall(flag.key, [buildPatch(`environments/${env}/${key}`,"replace",parsedData[key],)])
         }
       });
   }
+  // delay the patch requests to avoid race conditions when patching the flags
+  // const d = new Date(0);
+  // const end = Date.now() + 2_500;
+  // d.setUTCMilliseconds(end);
+  // console.log(`Patch Rate Limited until: ${d} `);
+  // while (Date.now() < end);
+  // console.log("Patch Sent")
+  // const patchFlagReq = await rateLimitRequest(
+  //   ldAPIPatchRequest(
+  //     inputArgs.apikey,
+  //     inputArgs.domain,
+  //     `flags/${inputArgs.projKeyDest}/${flag.key}`,
+  //     patchReq,
+  //   ),
+  // );
+  // const flagPatchStatus = await patchFlagReq.status;
+  // if (flagPatchStatus > 200){
+  //   flagsDoubleCheck.push(flag.key)
+  // }
+  
+  // consoleLogger(
+  //   flagPatchStatus,
+  //   `Patching ${flag.key} with environment specific configuration, Status: ${flagPatchStatus}`,
+  // );
+}
+
+async function makePatchCall(flagKey, patchReq){
   // delay the patch requests to avoid race conditions when patching the flags
   const d = new Date(0);
   const end = Date.now() + 2_500;
@@ -259,18 +294,18 @@ for await (const flag of flagData.items) {
     ldAPIPatchRequest(
       inputArgs.apikey,
       inputArgs.domain,
-      `flags/${inputArgs.projKeyDest}/${flag.key}`,
+      `flags/${inputArgs.projKeyDest}/${flagKey}`,
       patchReq,
     ),
   );
   const flagPatchStatus = await patchFlagReq.status;
   if (flagPatchStatus > 200){
-    flagsDoubleCheck.push(flag.key)
+    flagsDoubleCheck.push(flagKey)
   }
   
   consoleLogger(
     flagPatchStatus,
-    `Patching ${flag.key} with environment specific configuration, Status: ${flagPatchStatus}`,
+    `Patching ${flagKey} with environment specific configuration, Status: ${flagPatchStatus}`,
   );
 }
 
