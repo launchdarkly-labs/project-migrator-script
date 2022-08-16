@@ -255,7 +255,7 @@ for await (const flag of flagData.items) {
           
         }
       });
-      makePatchCall(flag.key, patchReq)
+      await makePatchCall(flag.key, patchReq)
 
   }
   // delay the patch requests to avoid race conditions when patching the flags
@@ -285,7 +285,8 @@ for await (const flag of flagData.items) {
 }
 
 async function makePatchCall(flagKey, patchReq){
-  // delay the patch requests to avoid race conditions when patching the flags
+  // var flagsDoubleCheck: string[] = [];
+  // //delay the patch requests to avoid race conditions when patching the flags
   // const d = new Date(0);
   // const end = Date.now() + 2_500;
   // d.setUTCMilliseconds(end);
@@ -304,11 +305,17 @@ async function makePatchCall(flagKey, patchReq){
   if (flagPatchStatus > 200){
     flagsDoubleCheck.push(flagKey)
   }
+
+  if (flagPatchStatus == 400) {
+    console.log(patchFlagReq)
+  }
   
   consoleLogger(
     flagPatchStatus,
     `Patching ${flagKey} with environment specific configuration, Status: ${flagPatchStatus}`,
   );
+
+  return flagsDoubleCheck;
 }
 
 if(flagsDoubleCheck.length > 0) {

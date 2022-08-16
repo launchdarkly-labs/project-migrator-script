@@ -122,7 +122,7 @@ async function writeJson(filePath: string, o: any) {
 }
 
 export function consoleLogger(status: number, message: string) {
-  if (status > 201) {
+  if (status > 201 && status != 429) {
     return console.warn(Colors.yellow(message));
   }
 
