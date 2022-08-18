@@ -275,9 +275,6 @@ for await (const flag of flagData.items) {
 }
 
 async function makePatchCall(flagKey, patchReq){
-  if (flagKey == "bike_pricing"){
-    console.log(patchReq)
-  }
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
