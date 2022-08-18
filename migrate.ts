@@ -84,12 +84,23 @@ consoleLogger(
 );
 const newProj = await projResp.json();
 
+const end = 2_500;
+const d = new Date(0);
+d.setUTCMilliseconds(end);
+console.log(`Rate Limited until: ${d} `);
+while (Date.now() < end);
+
 // Segment Data //
 
 projRep.environments.items.forEach(async (env: any) => {
   const segmentData = await getJson(
     `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
+  const end = 2_500;
+  const d = new Date(0);
+  d.setUTCMilliseconds(end);
+  console.log(`Rate Limited until: ${d} `);
+  while (Date.now() < end);
   // We are ignoring big segments/synced segments for now
   segmentData.items.forEach(async (segment: any) => {
     if (segment.unbounded == true) {
@@ -107,13 +118,18 @@ projRep.environments.items.forEach(async (env: any) => {
     if (segment.tags) newSegment.tags = segment.tags;
     if (segment.description) newSegment.description = segment.description;
 
+    // create each segment
+    const post = ldAPIPostRequest(
+      inputArgs.apikey,
+      inputArgs.domain,
+      `segments/${projRep.key}/${env.key}`,
+      newSegment,
+    )
+
+    console.log(post)
+
     const segmentResp = await rateLimitRequest(
-      ldAPIPostRequest(
-        inputArgs.apikey,
-        inputArgs.domain,
-        `segments/${newProj.key}/${env.key}`,
-        newSegment,
-      ),
+      post,
     );
 
     const segmentStatus = await segmentResp.status;
@@ -124,6 +140,8 @@ projRep.environments.items.forEach(async (env: any) => {
     if (segmentStatus > 201) {
       console.log(JSON.stringify(newSegment));
     }
+
+    // patch for each segment to great the rules for the environmen 
 
     // Build Segment Patches //
     const sgmtPatches = [];
@@ -232,6 +250,7 @@ for await (const flag of flagData.items) {
       .filter((key) => !key.includes("access"))
       .filter((key) => !key.includes("_debugEventsUntilDate"))
       .filter((key) => !key.startsWith("_"))
+      .filter((key) => !key.startsWith("-"))
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
@@ -258,6 +277,9 @@ for await (const flag of flagData.items) {
 }
 
 async function makePatchCall(flagKey, patchReq){
+  if (flagKey == "bike_pricing"){
+    console.log(patchReq)
+  }
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
