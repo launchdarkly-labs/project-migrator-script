@@ -7,17 +7,17 @@
 
 ### Considerations
 
-- These scripts, `migrate.ts` and `source.ts`, are provided strictly as-is. LaunchDarkly Support cannot be expected for help running this.
+- These scripts, `migrate.ts` and `source.ts`, are provided strictly as-is. LaunchDarkly Support cannot help run this.
 
 ### Known issues
 
-- Bug with 429 rate limiting. The request that is rate limited will still fail
-  but subsequent requests work.
-- Importing LD API TypeScript types causes an import error, so are commented out
+- Bug with 429 rate limiting. The rate-limited request will still fail,
+  but subsequent requests will work.
+- Importing LD API TypeScript types causes an import error, so they are commented out
   in various spots.
 - Types in general are very loose, which Deno is not happy about. The scripts run as
-  JavaScript overall compared to validating the TypeScript first.
-- Due to the current API configuration, the environments count for a given project tops at 20 environments for a single project.
+  JavaScript overall instead of validating the TypeScript first.
+- Due to the current API configuration, you cannot have more than 20 environments in a single project.
 - Due to considerations around many API requests at once, monitor 400 errors for flag configurations that may not be up to date.
 - To avoid a race condition, a few `wait`s have been placed in the script.
 
