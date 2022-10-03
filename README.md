@@ -29,7 +29,7 @@ First, export your source data. The `source.ts` script writes the data to a newl
 Here's how to export your source data:
 
 ```
-deno run --allow-env --allow-read --allow-net --allow-write source.ts -p <SOURCE PROJECT> -k <LD API KEY>
+deno run --allow-env --allow-read --allow-net --allow-write source.ts -p <SOURCE PROJECT KEY> -k <SOURCE LD API KEY>
 
 ```
 
@@ -41,7 +41,7 @@ Then, migrate the source data to the destination project. The `migrate.ts` scrip
 Here's how to migrate the source data to your destination project:
 
 ```
-deno run --allow-env --allow-read --allow-net --allow-write migrate.ts -p <SOURCE PROJECT> -k <LD API KEY> -d <DESTINATION PROJECT>
+deno run --allow-env --allow-read --allow-net --allow-write migrate.ts -p <SOURCE PROJECT KEY> -k <DESTINATION LD API KEY> -d <DESTINATION PROJECT KEY>
 
 ```
 
