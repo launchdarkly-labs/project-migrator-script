@@ -8,10 +8,16 @@ export async function getJson(filePath: string) {
   }
 }
 
-export async function rateLimitRequest(req: Request) {
+export async function rateLimitRequest(req: Request, path: String) {
   const rateLimitReq = req.clone();
   const res = await fetch(req);
   let newRes = res;
+  if (res.status == 409 && path == `projects`) {
+    console.warn(Colors.yellow(`It looks like this project has already been created in the destination`));
+    console.warn(Colors.yellow(`To avoid errors and possible overwrite, please either:`));
+    console.warn(Colors.yellow(`Update your name to a new one, or delete the existing project in the destination instance`));
+    Deno.exit(1);
+  }
   if (res.status == 429) {
     const rateLimit = res.headers.get("x-ratelimit-reset");
     const end = Number(rateLimit) + 2_500;
@@ -43,7 +49,6 @@ export function ldAPIPostRequest(
       body: JSON.stringify(body),
     },
   );
-
   return req;
 }
 

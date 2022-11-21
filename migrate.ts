@@ -76,6 +76,7 @@ if (projRep.defaultClientSideAvailability) {
 
 const projResp = await rateLimitRequest(
   ldAPIPostRequest(inputArgs.apikey, inputArgs.domain, `projects`, projPost),
+  'projects'
 );
 
 consoleLogger(
