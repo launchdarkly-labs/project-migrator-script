@@ -85,12 +85,14 @@ consoleLogger(
 );
 const newProj = await projResp.json();
 
-const end = 2_500;
-const d = new Date(0);
-d.setUTCMilliseconds(end);
-console.log(`Rate Limited until: ${d} `);
-while (Date.now() < end);
-
+// create a wait for project response to come back
+console.log("Waiting for 5 seconds to make sure the project is created before building the rest")
+var start = Date.now(),
+now = start;
+var wait = 5000 // seconds * 1000
+while (now - start < wait) {
+  now = Date.now();
+}
 // Segment Data //
 
 projRep.environments.items.forEach(async (env: any) => {
