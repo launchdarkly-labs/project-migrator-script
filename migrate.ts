@@ -86,6 +86,7 @@ consoleLogger(
 const newProj = await projResp.json();
 
 // create a wait for project response to come back
+console.log("Waiting for 5 seconds to make sure the project is created before building the rest")
 var start = Date.now(),
 now = start;
 var wait = 5000 // seconds * 1000
