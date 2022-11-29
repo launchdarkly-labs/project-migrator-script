@@ -21,7 +21,8 @@
 - Due to considerations around many API requests at once, monitor 400 errors for flag configurations that may not be up to date.
 - To avoid a race condition, a few `wait`s have been placed in the script.
 
-### Sourcing data
+## Instructions for use
+1. Sourcing data
 
 First, export your source data. The `source.ts` script writes the data to a newly created
 `source/project/<source-project-key>` directory.
@@ -33,7 +34,7 @@ deno run --allow-env --allow-read --allow-net --allow-write source.ts -p <SOURCE
 
 ```
 
-### Migrating data
+2. Migrating data
 
 Then, migrate the source data to the destination project. The `migrate.ts` script reads the source data out of the previously created `source/project/<source-project-key>` directory. Then it uses the
 `DESTINATION PROJECT` as the project key, and updates the destination project using a series of `POST`s and `PATCH`s.
@@ -44,6 +45,16 @@ Here's how to migrate the source data to your destination project:
 deno run --allow-env --allow-read --allow-net --allow-write migrate.ts -p <SOURCE PROJECT KEY> -k <DESTINATION LD API KEY> -d <DESTINATION PROJECT KEY>
 
 ```
+
+**Important note** The script assumes the target project does not yet exist. It's strongly recommended you don't manually create the target project before executing the `migrate.ts` script. If you are using the script to merge contents of two existing projects, you need to make sure both projects have the same environment structure before executing the script.
+
+### Resources migrated by the script
+* Environments
+* Flags
+  * Flag variations
+  * Flag individual targets
+  * Flag attribute-based targeting rules
+* Standard User Segments (no Big Segments)
 
 ### Pointing to a different instance
 
