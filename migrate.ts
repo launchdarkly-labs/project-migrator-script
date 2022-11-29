@@ -60,9 +60,9 @@ projectJson.environments.items.forEach((env: any) => {
 const projRep = projectJson; //as Project ... what's this for?
 const projPost: any = {
   key: inputArgs.projKeyDest,
-  name: projRep.name,  // Use projKeyDest instead , maybe sanitize it a bit (replace - w/ space, etc)?
+  name: inputArgs.projKeyDest,  // Optional TODO: convert the target project key to a human-friendly project name
   tags: projRep.tags,
-  environments: buildEnv, // What happens if you're patching an existing project that already has environments that don't match what's in the source?
+  environments: buildEnv,
 }; //as ProjectPost
 
 if (projRep.defaultClientSideAvailability) {
@@ -78,7 +78,7 @@ const projResp = await rateLimitRequest(
 
 consoleLogger(
   projResp.status,
-  `Creating Project: ${projRep.key} Status: ${projResp.status}`,
+  `Creating Project: ${inputArgs.projKeyDest} Status: ${projResp.status}`,
 );
 const newProj = await projResp.json();
 
@@ -92,7 +92,7 @@ while (now - start < wait) {
 }
 // Segment Data //
 
-// How can we make sure the project with all its environments has been created by this point?
+// TODO: How can we make sure the project with all its environments has been created by this point?
 
 projRep.environments.items.forEach(async (env: any) => {
   const segmentData = await getJson(
@@ -120,15 +120,12 @@ projRep.environments.items.forEach(async (env: any) => {
     if (segment.tags) newSegment.tags = segment.tags;
     if (segment.description) newSegment.description = segment.description;
 
-    // create each segment
     const post = ldAPIPostRequest(
       inputArgs.apikey,
       inputArgs.domain,
-      `segments/${projRep.key}/${env.key}`,
+      `segments/${inputArgs.projKeyDest}/${env.key}`,
       newSegment,
     )
-
-    console.log(post);
 
     const segmentResp = await rateLimitRequest(
       post,
@@ -142,8 +139,6 @@ projRep.environments.items.forEach(async (env: any) => {
     if (segmentStatus > 201) {
       console.log(JSON.stringify(newSegment));
     }
-
-    // patch for each segment to great the rules for the environmen 
 
     // Build Segment Patches //
     const sgmtPatches = [];
@@ -257,7 +252,6 @@ for await (const flag of flagData.items) {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
     
-    // console.log(parsedData)
 
     Object.keys(parsedData)
       .map((key) => {
@@ -274,8 +268,7 @@ for await (const flag of flagData.items) {
           
         }
       });
-      await makePatchCall(flag.key, patchReq) // check out does the patchReq look like
-
+      await makePatchCall(flag.key, patchReq) 
   }
 
 }
