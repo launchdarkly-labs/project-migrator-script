@@ -39,7 +39,7 @@ const projectJson = await getJson(
   `./source/project/${inputArgs.projKeySource}/project.json`,
 );
 
-const buildEnv: Array<any> = [];
+const buildEnv: Array<any> = [];  // To account for a potential discrepancy between source & taget projects, this array should be first populated with the environments already existing in the target project
 
 projectJson.environments.items.forEach((env: any) => {
   const newEnv: any = {
@@ -51,25 +51,22 @@ projectJson.environments.items.forEach((env: any) => {
   if (env.defaultTtl) newEnv.defaultTtl = env.defaultTtl;
   if (env.confirmChanges) newEnv.confirmChanges = env.confirmChanges;
   if (env.secureMode) newEnv.secureMode = env.secureMode;
-  if (env.defaultTrackEvents) {
-    newEnv.defaultTrackEvents = env.defaultTrackEvents;
-  }
+  if (env.defaultTrackEvents) newEnv.defaultTrackEvents = env.defaultTrackEvents;
   if (env.tags) newEnv.tags = env.tags;
 
   buildEnv.push(newEnv);
 });
 
-const projRep = projectJson; //as Project
+const projRep = projectJson; //as Project ... what's this for?
 const projPost: any = {
   key: inputArgs.projKeyDest,
-  name: projRep.name,
+  name: projRep.name,  // Use projKeyDest instead , maybe sanitize it a bit (replace - w/ space, etc)?
   tags: projRep.tags,
-  environments: buildEnv,
+  environments: buildEnv, // What happens if you're patching an existing project that already has environments that don't match what's in the source?
 }; //as ProjectPost
 
 if (projRep.defaultClientSideAvailability) {
-  projPost.defaultClientSideAvailability =
-    projRep.defaultClientSideAvailability;
+  projPost.defaultClientSideAvailability = projRep.defaultClientSideAvailability;
 } else {
   projPost.includeInSnippetByDefault = projRep.includeInSnippetByDefault;
 }
@@ -94,6 +91,8 @@ while (now - start < wait) {
   now = Date.now();
 }
 // Segment Data //
+
+// How can we make sure the project with all its environments has been created by this point?
 
 projRep.environments.items.forEach(async (env: any) => {
   const segmentData = await getJson(
@@ -255,6 +254,8 @@ for await (const flag of flagData.items) {
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
+    
+    // console.log(parsedData)
 
     Object.keys(parsedData)
       .map((key) => {
@@ -271,7 +272,7 @@ for await (const flag of flagData.items) {
           
         }
       });
-      await makePatchCall(flag.key, patchReq)
+      await makePatchCall(flag.key, patchReq) // check out does the patchReq look like
 
   }
 
