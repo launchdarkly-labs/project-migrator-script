@@ -128,6 +128,8 @@ projRep.environments.items.forEach(async (env: any) => {
       newSegment,
     )
 
+    console.log(post);
+
     const segmentResp = await rateLimitRequest(
       post,
     );
