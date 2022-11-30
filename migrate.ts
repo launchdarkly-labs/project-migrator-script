@@ -80,29 +80,13 @@ consoleLogger(
   projResp.status,
   `Creating Project: ${inputArgs.projKeyDest} Status: ${projResp.status}`,
 );
-const newProj = await projResp.json();
-
-// create a wait for project response to come back
-console.log("Waiting for 5 seconds to make sure the project is created before building the rest")
-var start = Date.now(),
-now = start;
-var wait = 5000 // seconds * 1000
-while (now - start < wait) {
-  now = Date.now();
-}
-// Segment Data //
-
-// TODO: How can we make sure the project with all its environments has been created by this point?
+await projResp.json();
 
 projRep.environments.items.forEach(async (env: any) => {
   const segmentData = await getJson(
     `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
-  const end = 2_500;
-  const d = new Date(0);
-  d.setUTCMilliseconds(end);
-  console.log(`Rate Limited until: ${d} `);
-  while (Date.now() < end);
+  
   // We are ignoring big segments/synced segments for now
   segmentData.items.forEach(async (segment: any) => {
     if (segment.unbounded == true) {
@@ -159,7 +143,7 @@ projRep.environments.items.forEach(async (env: any) => {
       ldAPIPatchRequest(
         inputArgs.apikey,
         inputArgs.domain,
-        `segments/${newProj.key}/${env.key}/${newSegment.key}`,
+        `segments/${inputArgs.projKeyDest}/${env.key}/${newSegment.key}`,
         sgmtPatches,
       ),
     );
