@@ -52,6 +52,7 @@ deno run --allow-env --allow-read --allow-net --allow-write migrate.ts -p <SOURC
 * Environments
 * Flags
   * Flag variations
+  * Flag prerequisites
   * Flag individual targets
   * Flag attribute-based targeting rules
 * Standard User Segments (no Big Segments)
