@@ -46,7 +46,7 @@ deno run --allow-env --allow-read --allow-net --allow-write migrate.ts -p <SOURC
 
 ```
 
-**Important note** The script assumes the target project does not yet exist. It's strongly recommended you don't manually create the target project before executing the `migrate.ts` script. If you are using the script to merge contents of two existing projects, you need to make sure both projects have the same environment structure before executing the script.
+**Important note** The script currently doesn't support merging two already existing projects - make sure the destination project doesn't exist before executing the `migrate.ts` script. If you have already created the destination project manually, delete the project before proceeding. 
 
 ### Resources migrated by the script
 * Environments
