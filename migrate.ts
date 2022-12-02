@@ -39,7 +39,7 @@ const projectJson = await getJson(
   `./source/project/${inputArgs.projKeySource}/project.json`,
 );
 
-const buildEnv: Array<any> = [];  // To account for a potential discrepancy between source & taget projects, this array should be first populated with the environments already existing in the target project
+const buildEnv: Array<any> = [];
 
 projectJson.environments.items.forEach((env: any) => {
   const newEnv: any = {
@@ -57,7 +57,7 @@ projectJson.environments.items.forEach((env: any) => {
   buildEnv.push(newEnv);
 });
 
-const projRep = projectJson; //as Project ... what's this for?
+const projRep = projectJson; //as Project
 const projPost: any = {
   key: inputArgs.projKeyDest,
   name: inputArgs.projKeyDest,  // Optional TODO: convert the target project key to a human-friendly project name
