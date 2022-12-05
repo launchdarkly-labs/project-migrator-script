@@ -51,9 +51,7 @@ projectJson.environments.items.forEach((env: any) => {
   if (env.defaultTtl) newEnv.defaultTtl = env.defaultTtl;
   if (env.confirmChanges) newEnv.confirmChanges = env.confirmChanges;
   if (env.secureMode) newEnv.secureMode = env.secureMode;
-  if (env.defaultTrackEvents) {
-    newEnv.defaultTrackEvents = env.defaultTrackEvents;
-  }
+  if (env.defaultTrackEvents) newEnv.defaultTrackEvents = env.defaultTrackEvents;
   if (env.tags) newEnv.tags = env.tags;
 
   buildEnv.push(newEnv);
@@ -62,14 +60,13 @@ projectJson.environments.items.forEach((env: any) => {
 const projRep = projectJson; //as Project
 const projPost: any = {
   key: inputArgs.projKeyDest,
-  name: projRep.name,
+  name: inputArgs.projKeyDest,  // Optional TODO: convert the target project key to a human-friendly project name
   tags: projRep.tags,
   environments: buildEnv,
 }; //as ProjectPost
 
 if (projRep.defaultClientSideAvailability) {
-  projPost.defaultClientSideAvailability =
-    projRep.defaultClientSideAvailability;
+  projPost.defaultClientSideAvailability = projRep.defaultClientSideAvailability;
 } else {
   projPost.includeInSnippetByDefault = projRep.includeInSnippetByDefault;
 }
@@ -81,29 +78,15 @@ const projResp = await rateLimitRequest(
 
 consoleLogger(
   projResp.status,
-  `Creating Project: ${projRep.key} Status: ${projResp.status}`,
+  `Creating Project: ${inputArgs.projKeyDest} Status: ${projResp.status}`,
 );
-const newProj = await projResp.json();
-
-// create a wait for project response to come back
-console.log("Waiting for 5 seconds to make sure the project is created before building the rest")
-var start = Date.now(),
-now = start;
-var wait = 5000 // seconds * 1000
-while (now - start < wait) {
-  now = Date.now();
-}
-// Segment Data //
+await projResp.json();
 
 projRep.environments.items.forEach(async (env: any) => {
   const segmentData = await getJson(
     `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
-  const end = 2_500;
-  const d = new Date(0);
-  d.setUTCMilliseconds(end);
-  console.log(`Rate Limited until: ${d} `);
-  while (Date.now() < end);
+  
   // We are ignoring big segments/synced segments for now
   segmentData.items.forEach(async (segment: any) => {
     if (segment.unbounded == true) {
@@ -121,11 +104,10 @@ projRep.environments.items.forEach(async (env: any) => {
     if (segment.tags) newSegment.tags = segment.tags;
     if (segment.description) newSegment.description = segment.description;
 
-    // create each segment
     const post = ldAPIPostRequest(
       inputArgs.apikey,
       inputArgs.domain,
-      `segments/${projRep.key}/${env.key}`,
+      `segments/${inputArgs.projKeyDest}/${env.key}`,
       newSegment,
     )
 
@@ -141,8 +123,6 @@ projRep.environments.items.forEach(async (env: any) => {
     if (segmentStatus > 201) {
       console.log(JSON.stringify(newSegment));
     }
-
-    // patch for each segment to great the rules for the environmen 
 
     // Build Segment Patches //
     const sgmtPatches = [];
@@ -163,7 +143,7 @@ projRep.environments.items.forEach(async (env: any) => {
       ldAPIPatchRequest(
         inputArgs.apikey,
         inputArgs.domain,
-        `segments/${newProj.key}/${env.key}/${newSegment.key}`,
+        `segments/${inputArgs.projKeyDest}/${env.key}/${newSegment.key}`,
         sgmtPatches,
       ),
     );
@@ -255,6 +235,7 @@ for await (const flag of flagData.items) {
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
+    
 
     Object.keys(parsedData)
       .map((key) => {
@@ -271,8 +252,7 @@ for await (const flag of flagData.items) {
           
         }
       });
-      await makePatchCall(flag.key, patchReq)
-
+      await makePatchCall(flag.key, patchReq) 
   }
 
 }
