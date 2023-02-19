@@ -207,10 +207,14 @@ for await (const flag of flagData.items) {
 }
 
 // Send one patch per Flag for all Environments //
-const envList: string[] = ["test"];
-// projectJson.environments.items.forEach((env: any) => {
-//   envList.push(env.key);
-// });
+const envList: string[] = [];
+projectJson.environments.items.forEach((env: any) => {
+  envList.push(env.key);
+});
+
+// The # of patch calls is the # of environments * flags,
+// if you need to limit run time, a good place to start is to only patch the critical environments in a shorter list
+//const envList: string[] = ["test"];
 
 
 const flagsDoubleCheck: string[] = [];
