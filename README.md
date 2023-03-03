@@ -21,7 +21,16 @@
 - Due to considerations around many API requests at once, monitor 400 errors for flag configurations that may not be up to date.
 - To avoid a race condition, a few `wait`s have been placed in the script.
 
+## Things you Should Consider when migrating flags?
+
+- What can you scope down? Do all the flags need to moved over or can we use this as a way to clean up the environment?
+- Do all my environments need to go? or maybe just a few?
+- Am I able to stop edits in the destination project?  This script does not keep them in sync, so if changes need to be made they should be prior
+- Who is going to run it and how? The calls can take a while, with rate limits, so should I run it on an EC2 or the like?
+- If I have thousands or even hundreds of updates: what is critical, how will I verify the changes are correct?
+
 ## Instructions for use
+
 1. Sourcing data
 
 First, export your source data. The `source.ts` script writes the data to a newly created
