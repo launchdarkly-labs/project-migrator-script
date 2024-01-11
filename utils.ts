@@ -23,9 +23,9 @@ export async function rateLimitRequest(req: Request, path: String) {
     const end = Number(rateLimit) + 2_500;
     const d = new Date(0);
     d.setUTCMilliseconds(end);
-    console.log(`Rate Limited until: ${d} `);
+    console.log(`Rate Limited until: ${d} for request ${req.url}`);
     while (Date.now() < end);
-    console.log("Making new request");
+    console.log(`Making new request for request ${req.url}`);
     newRes = await fetch(rateLimitReq);
   }
 
