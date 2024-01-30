@@ -212,11 +212,19 @@ projectJson.environments.items.forEach((env: any) => {
   envList.push(env.key);
 });
 
+// The # of patch calls is the # of environments * flags,
+// if you need to limit run time, a good place to start is to only patch the critical environments in a shorter list
+//const envList: string[] = ["test"];
+
 
 const flagsDoubleCheck: string[] = [];
 var count = 0;
 
+const flagCount: number = flagData.items.length; 
+var flagIterate: number = 0;
+
 for await (const flag of flagData.items) {
+  flagIterate = flagIterate + 1;
   for await (const env of envList) {
     const patchReq: any[] = [];
     const flagEnvData = flag.environments[env];
@@ -254,6 +262,7 @@ for await (const flag of flagData.items) {
       });
       await makePatchCall(flag.key, patchReq) 
   }
+  console.log(`Progress of the modifications: ${flagIterate} of ${flagCount}`)
 
 }
 

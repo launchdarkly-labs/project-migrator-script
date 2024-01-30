@@ -44,6 +44,7 @@ export function ldAPIPostRequest(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        'User-Agent': 'Project-Migrator-Script',
         "Authorization": apiKey,
       },
       body: JSON.stringify(body),
@@ -111,6 +112,7 @@ export function ldAPIRequest(apiKey: string, domain: string, path: string) {
     {
       headers: {
         "Authorization": apiKey,
+        'User-Agent': 'launchdarkly-project-migrator-script',
       },
     },
   );
