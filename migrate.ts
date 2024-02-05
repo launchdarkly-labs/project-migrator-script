@@ -82,13 +82,13 @@ consoleLogger(
 );
 await projResp.json();
 
-await Promise.all(projRep.environments.items.map(async (env: any) => {
+projRep.environments.items.forEach(async (env: any) => {
   const segmentData = await getJson(
     `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
   
   // We are ignoring big segments/synced segments for now
-  await Promise.all(segmentData.items.map(async (segment: any) => {
+  segmentData.items.forEach(async (segment: any) => {
     if (segment.unbounded == true) {
       console.log(Colors.yellow(
         `Segment: ${segment.key} in Environment ${env.key} is unbounded, skipping`,
@@ -153,8 +153,8 @@ await Promise.all(projRep.environments.items.map(async (env: any) => {
       segPatchStatus,
       `Patching segment ${newSegment.key} status: ${segPatchStatus}`,
     );
-  }));
-}));
+  });
+});
 
 // Flag Data //
 
