@@ -22,11 +22,12 @@ export async function rateLimitRequest(req: Request, path: String) {
     const rateLimit = res.headers.get("x-ratelimit-reset");
     const end = Number(rateLimit) + 2_500;
     const d = new Date(0);
+    console.log(`${res.statusText}`);
     d.setUTCMilliseconds(end);
     console.log(`Rate Limited until: ${d} for request ${req.url}`);
     while (Date.now() < end);
     console.log(`Making new request for request ${req.url}`);
-    newRes = await fetch(rateLimitReq);
+    newRes = await rateLimitRequest(rateLimitReq, path);
   }
 
   return newRes;

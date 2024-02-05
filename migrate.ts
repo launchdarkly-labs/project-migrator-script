@@ -252,12 +252,12 @@ for await (const flag of flagData.items) {
           
         }
       });
-      await makePatchCall(flag.key, patchReq) 
+      await makePatchCall(flag.key, patchReq, env) 
   }
 
 }
 
-async function makePatchCall(flagKey, patchReq){
+async function makePatchCall(flagKey, patchReq, env){
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -271,7 +271,7 @@ async function makePatchCall(flagKey, patchReq){
     flagsDoubleCheck.push(flagKey)
     consoleLogger(
       flagPatchStatus,
-      `Patching ${flagKey} with environment specific configuration, Status: ${flagPatchStatus}`,
+      `Patching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
     );
   }
 
@@ -281,7 +281,7 @@ async function makePatchCall(flagKey, patchReq){
   
   consoleLogger(
     flagPatchStatus,
-    `Patching ${flagKey} with environment specific configuration, Status: ${flagPatchStatus}`,
+    `Patching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
   );
 
   return flagsDoubleCheck;
