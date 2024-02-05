@@ -175,13 +175,13 @@ for await (const flag of flagData.items) {
     description: flag.description
   };
 
-  if (flag.clientSideAvailability) {
-    newFlag.clientSideAvailability = flag.clientSideAvailability;
-  } else if (flag.includeInSnippet) {
-    newFlag.includeInSnippet = flag.includeInSnippet;
+  if (flag.client_side_availability) {
+    newFlag.client_side_availability = flag.client_side_availability;
+  } else if (flag.include_in_snippet) {
+    newFlag.include_in_snippet = flag.include_in_snippet;
   }
-  if (flag.customProperties) {
-    newFlag.customProperties = flag.customProperties;
+  if (flag.custom_properties) {
+    newFlag.custom_properties = flag.custom_properties;
   }
 
   if (flag.defaults) {
