@@ -32,6 +32,9 @@ interface Arguments {
   domain: string;
 }
 
+
+
+
 let inputArgs: Arguments = yargs(Deno.args)
   .alias("p", "projKeySource")
   .alias("d", "projKeyDest")
