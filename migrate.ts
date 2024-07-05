@@ -57,6 +57,8 @@ projectJson.environments.items.forEach((env: any) => {
   buildEnv.push(newEnv);
 });
 
+const envkeys: Array<string> = buildEnv.map((env: any) => env.key);
+
 const projRep = projectJson; //as Project
 const projPost: any = {
   key: inputArgs.projKeyDest,
@@ -157,13 +159,22 @@ projRep.environments.items.forEach(async (env: any) => {
 });
 
 // Flag Data //
-
-const flagData = await getJson(
-  `./source/project/${inputArgs.projKeySource}/flag.json`,
+const flagList: Array<string> = await getJson(
+  `./source/project/${inputArgs.projKeySource}/flags.json`,
 );
 
+const flagsDoubleCheck: string[] = [];
+
 // Creating Global Flags //
-for await (const flag of flagData.items) {
+for (const [index, flagkey] of flagList.entries()) {
+
+  // Read flag
+  console.log(`Reading flag ${index + 1} of ${flagList.length} : ${flagkey}`);
+
+  const flag = await getJson(
+    `./source/project/${inputArgs.projKeySource}/flags/${flagkey}.json`,
+  );
+
   const newVariations = flag.variations.map(({ _id, ...rest }) => rest);
 
   const newFlag: any = {
@@ -189,7 +200,7 @@ for await (const flag of flagData.items) {
   }
 
   console.log(
-    `Creating flag: ${flag.key} in Project: ${inputArgs.projKeyDest}`,
+    `\tCreating flag: ${flag.key} in Project: ${inputArgs.projKeyDest}`,
   );
   const flagResp = await rateLimitRequest(
     ldAPIPostRequest(
@@ -200,32 +211,13 @@ for await (const flag of flagData.items) {
     ),
   );
   if (flagResp.status == 200 || flagResp.status == 201) {
-    console.log("Flag created");
+    console.log("\tFlag created");
   } else {
     console.log(`Error for flag ${newFlag.key}: ${flagResp.status}`);
   }
-}
 
-// Send one patch per Flag for all Environments //
-const envList: string[] = [];
-projectJson.environments.items.forEach((env: any) => {
-  envList.push(env.key);
-});
-
-// The # of patch calls is the # of environments * flags,
-// if you need to limit run time, a good place to start is to only patch the critical environments in a shorter list
-//const envList: string[] = ["test"];
-
-
-const flagsDoubleCheck: string[] = [];
-var count = 0;
-
-const flagCount: number = flagData.items.length; 
-var flagIterate: number = 0;
-
-for await (const flag of flagData.items) {
-  flagIterate = flagIterate + 1;
-  for await (const env of envList) {
+  // Add flag env settings
+  for (const env of envkeys) {
     const patchReq: any[] = [];
     const flagEnvData = flag.environments[env];
     const parsedData: Record<string, string> = Object.keys(flagEnvData)
@@ -260,11 +252,23 @@ for await (const flag of flagData.items) {
           
         }
       });
-      await makePatchCall(flag.key, patchReq, env) 
+      await makePatchCall(flag.key, patchReq, env);
+      
+      console.log(`\tFinished patching flag ${flagkey} for env ${env}`);
   }
-  console.log(`Progress of the modifications: ${flagIterate} of ${flagCount}`)
 
 }
+
+// Send one patch per Flag for all Environments //
+const envList: string[] = [];
+projectJson.environments.items.forEach((env: any) => {
+  envList.push(env.key);
+});
+
+// The # of patch calls is the # of environments * flags,
+// if you need to limit run time, a good place to start is to only patch the critical environments in a shorter list
+//const envList: string[] = ["test"];
+
 
 async function makePatchCall(flagKey, patchReq, env){
   const patchFlagReq = await rateLimitRequest(
@@ -280,7 +284,7 @@ async function makePatchCall(flagKey, patchReq, env){
     flagsDoubleCheck.push(flagKey)
     consoleLogger(
       flagPatchStatus,
-      `Patching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
+      `\tPatching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
     );
   }
 
@@ -290,7 +294,7 @@ async function makePatchCall(flagKey, patchReq, env){
   
   consoleLogger(
     flagPatchStatus,
-    `Patching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
+    `\tPatching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
   );
 
   return flagsDoubleCheck;
