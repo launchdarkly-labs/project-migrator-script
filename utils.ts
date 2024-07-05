@@ -1,5 +1,7 @@
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
+const apiVersion = "20240415";
+
 export async function getJson(filePath: string) {
   try {
     return JSON.parse(await Deno.readTextFile(filePath));
@@ -47,6 +49,7 @@ export function ldAPIPostRequest(
         "Content-Type": "application/json",
         'User-Agent': 'Project-Migrator-Script',
         "Authorization": apiKey,
+        "LD-API-Version": apiVersion,
       },
       body: JSON.stringify(body),
     },
@@ -67,6 +70,7 @@ export function ldAPIPatchRequest(
       headers: {
         "Content-Type": "application/json",
         "Authorization": apiKey,
+        "LD-API-Version": apiVersion,
       },
       body: JSON.stringify(body),
     },
@@ -114,6 +118,7 @@ export function ldAPIRequest(apiKey: string, domain: string, path: string) {
       headers: {
         "Authorization": apiKey,
         'User-Agent': 'launchdarkly-project-migrator-script',
+        "LD-API-Version": apiVersion,
       },
     },
   );
