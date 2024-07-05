@@ -3,7 +3,7 @@ import {
   ensureDir,
   ensureDirSync,
 } from "https://deno.land/std@0.149.0/fs/mod.ts";
-import { consoleLogger, ldAPIRequest, writeSourceData } from "./utils.ts";
+import { consoleLogger, delay, ldAPIRequest, writeSourceData } from "./utils.ts";
 
 interface Arguments {
   projKey: string;
@@ -16,6 +16,10 @@ let inputArgs: Arguments = yargs(Deno.args)
   .alias("k", "apikey")
   .alias("u", "domain")
   .default("u", "app.launchdarkly.com").argv;
+
+// ensure output directory exists
+const projPath = `./source/project/${inputArgs.projKey}`;
+ensureDirSync(projPath);
 
 // Project Data //
 const projResp = await fetch(
@@ -30,16 +34,19 @@ if (projResp == null) {
   Deno.exit(1);
 }
 const projData = await projResp.json();
-const projPath = `./source/project/${inputArgs.projKey}`;
-ensureDirSync(projPath); 
 
 await writeSourceData(projPath, "project", projData);
 
 // Segment Data //
 
 if (projData.environments.items.length > 0) {
+  
+  console.log(`Found ${projData.environments.items.length} environments`);
+
   projData.environments.items.forEach(async (env: any) => {
-    console.log(env.key);
+
+    console.log(`Getting Segments for environment: ${env.key}`);
+
     const segmentResp = await fetch(
       ldAPIRequest(
         inputArgs.apikey,
@@ -59,23 +66,76 @@ if (projData.environments.items.length > 0) {
   });
 }
 
-// Flag Data //
-const flagResp = await fetch(
-  ldAPIRequest(
-    inputArgs.apikey,
-    inputArgs.domain,
-    `flags/${inputArgs.projKey}?summary=false`,
-  ),
-);
-if (flagResp.status > 201) {
-  consoleLogger(flagResp.status, `Error getting flags: ${flagResp.status}`);
-  consoleLogger(flagResp.status, await flagResp.text());
-}
-if (flagResp == null) {
-  console.log("Failed getting Flags");
-  Deno.exit(1);
+// Get List of all Flags
+const pageSize : number = 5;
+let offset: number = 0;
+let moreFlags : boolean = true;
+const flags : string[] = [];
+let path = `flags/${inputArgs.projKey}?summary=true&limit=${pageSize}&offset=${offset}`;
+
+while (moreFlags) {
+
+  console.log(`Building flag list: ${offset} to ${offset + pageSize}`);
+
+  const flagsResp = await fetch(
+    ldAPIRequest(
+      inputArgs.apikey,
+      inputArgs.domain,
+      path,
+    ),
+  );
+
+  if (flagsResp.status > 201) {
+    consoleLogger(flagsResp.status, `Error getting flags: ${flagsResp.status}`);
+    consoleLogger(flagsResp.status, await flagsResp.text());
+  }
+  if (flagsResp == null) {
+    console.log("Failed getting Flags");
+    Deno.exit(1);
+  }
+
+  const flagsData = await flagsResp.json();
+
+  flags.push( ...flagsData.items.map((flag: any) => flag.key) );
+
+  if (flagsData._links.next) {
+    offset += pageSize;
+    path = `flags/${inputArgs.projKey}?summary=true&limit=${pageSize}&offset=${offset}`;
+  } else {
+    moreFlags = false;
+  }
 }
 
-const flagData = await flagResp.json();
+console.log(`Found ${flags.length} flags`);
 
-await writeSourceData(projPath, "flag", flagData);
+await writeSourceData(projPath, "flags", flags);
+
+// Get Individual Flag Data //
+ensureDirSync(`${projPath}/flags`);
+
+for (const [index, flagKey] of flags.entries()) {
+
+  console.log(`Getting flag ${index + 1} of ${flags.length}: ${flagKey}`)
+
+  await delay(200);
+
+  const flagResp = await fetch(
+    ldAPIRequest(
+      inputArgs.apikey,
+      inputArgs.domain,
+      `flags/${inputArgs.projKey}/${flagKey}`,
+    ),
+  );
+  if (flagResp.status > 201) {
+    consoleLogger(flagResp.status, `Error getting flag '${flagKey}': ${flagResp.status}`);
+    consoleLogger(flagResp.status, await flagResp.text());
+  }
+  if (flagResp == null) {
+    console.log("Failed getting flag '${flagKey}'");
+    Deno.exit(1);
+  }
+
+  const flagData = await flagResp.json();
+
+  await writeSourceData(`${projPath}/flags`, flagKey, flagData);
+}
