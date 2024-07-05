@@ -133,7 +133,7 @@ export function ldAPIRequest(apiKey: string, domain: string, path: string) {
 
 async function writeJson(filePath: string, o: any) {
   try {
-    await Deno.writeTextFile(filePath, JSON.stringify(o));
+    await Deno.writeTextFile(filePath, JSON.stringify(o, null, 2));
   } catch (e) {
     console.log(e);
   }
