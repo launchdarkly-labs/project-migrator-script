@@ -10,6 +10,11 @@ export async function getJson(filePath: string) {
   }
 }
 
+export async function delay(ms: number) {
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
 export async function rateLimitRequest(req: Request, path: String) {
   const rateLimitReq = req.clone();
   const res = await fetch(req);
