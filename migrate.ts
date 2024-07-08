@@ -84,18 +84,18 @@ consoleLogger(
 );
 await projResp.json();
 
-projRep.environments.items.forEach(async (env: any) => {
+for (const env of projRep.environments.items) {
   const segmentData = await getJson(
     `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
   
   // We are ignoring big segments/synced segments for now
-  segmentData.items.forEach(async (segment: any) => {
+  for (const segment of segmentData.items) {
     if (segment.unbounded == true) {
       console.log(Colors.yellow(
         `Segment: ${segment.key} in Environment ${env.key} is unbounded, skipping`,
       ));
-      return;
+      continue;
     }
 
     const newSegment: any = {
@@ -150,13 +150,13 @@ projRep.environments.items.forEach(async (env: any) => {
       ),
     );
 
-    const segPatchStatus = await patchRules.statusText;
+    const segPatchStatus = patchRules.statusText;
     consoleLogger(
-      segPatchStatus,
+      patchRules.status,
       `Patching segment ${newSegment.key} status: ${segPatchStatus}`,
     );
-  });
-});
+  };
+};
 
 // Flag Data //
 const flagList: Array<string> = await getJson(
@@ -186,13 +186,13 @@ for (const [index, flagkey] of flagList.entries()) {
     description: flag.description
   };
 
-  if (flag.client_side_availability) {
-    newFlag.client_side_availability = flag.client_side_availability;
-  } else if (flag.include_in_snippet) {
-    newFlag.include_in_snippet = flag.include_in_snippet;
+  if (flag.clientSideAvailability) {
+    newFlag.clientSideAvailability = flag.clientSideAvailability;
+  } else if (flag.includeInSnippet) {
+    newFlag.includeInSnippet = flag.includeInSnippet;
   }
-  if (flag.custom_properties) {
-    newFlag.custom_properties = flag.custom_properties;
+  if (flag.customProperties) {
+    newFlag.customProperties = flag.customProperties;
   }
 
   if (flag.defaults) {
