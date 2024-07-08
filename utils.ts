@@ -14,6 +14,29 @@ export async function delay(ms: number) {
   await new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function calculateRateLimitDelay(response: Response): number {
+  const now = Date.now();
+  const retryAfterHeader = response.headers.get('retry-after');
+  const rateLimitResetHeader = response.headers.get('x-ratelimit-reset');
+
+  let retryAfter = 0;
+  let rateLmitReset = 0;
+
+  if (retryAfterHeader) {
+    retryAfter = parseInt(retryAfterHeader, 10) * 1000; // Convert to ms
+  }
+
+  if (rateLimitResetHeader) {
+    const resetTime = parseInt(rateLimitResetHeader, 10);
+    rateLmitReset = resetTime - now;
+  }
+                          
+  const delay = Math.max(retryAfter, rateLmitReset);
+
+  // add random jitter
+  const jitter = Math.floor(Math.random() * 100);
+  return delay + jitter;
+}
 
 export async function rateLimitRequest(req: Request, path: String) {
   const rateLimitReq = req.clone();
@@ -26,13 +49,9 @@ export async function rateLimitRequest(req: Request, path: String) {
     Deno.exit(1);
   }
   if (res.status == 429) {
-    const rateLimit = res.headers.get("x-ratelimit-reset");
-    const end = Number(rateLimit) + 2_500;
-    const d = new Date(0);
-    console.log(`${res.statusText}`);
-    d.setUTCMilliseconds(end);
-    console.log(`Rate Limited until: ${d} for request ${req.url}`);
-    while (Date.now() < end);
+    const delay = calculateRateLimitDelay(res);
+    console.log(`Rate Limited for ${req.url} for ${delay}ms`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
     console.log(`Making new request for request ${req.url}`);
     newRes = await rateLimitRequest(rateLimitReq, path);
   }
