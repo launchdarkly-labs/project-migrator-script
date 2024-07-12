@@ -1,11 +1,41 @@
 import * as Colors from "https://deno.land/std/fmt/colors.ts";
 
+const apiVersion = "20240415";
+
 export async function getJson(filePath: string) {
   try {
     return JSON.parse(await Deno.readTextFile(filePath));
   } catch (e) {
     console.log(filePath + ": " + e.message);
   }
+}
+
+export async function delay(ms: number) {
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function calculateRateLimitDelay(response: Response): number {
+  const now = Date.now();
+  const retryAfterHeader = response.headers.get('retry-after');
+  const rateLimitResetHeader = response.headers.get('x-ratelimit-reset');
+
+  let retryAfter = 0;
+  let rateLmitReset = 0;
+
+  if (retryAfterHeader) {
+    retryAfter = parseInt(retryAfterHeader, 10) * 1000; // Convert to ms
+  }
+
+  if (rateLimitResetHeader) {
+    const resetTime = parseInt(rateLimitResetHeader, 10);
+    rateLmitReset = resetTime - now;
+  }
+                          
+  const delay = Math.max(retryAfter, rateLmitReset);
+
+  // add random jitter
+  const jitter = Math.floor(Math.random() * 100);
+  return delay + jitter;
 }
 
 export async function rateLimitRequest(req: Request, path: String) {
@@ -19,13 +49,9 @@ export async function rateLimitRequest(req: Request, path: String) {
     Deno.exit(1);
   }
   if (res.status == 429) {
-    const rateLimit = res.headers.get("x-ratelimit-reset");
-    const end = Number(rateLimit) + 2_500;
-    const d = new Date(0);
-    console.log(`${res.statusText}`);
-    d.setUTCMilliseconds(end);
-    console.log(`Rate Limited until: ${d} for request ${req.url}`);
-    while (Date.now() < end);
+    const delay = calculateRateLimitDelay(res);
+    console.log(`Rate Limited for ${req.url} for ${delay}ms`);
+    await new Promise((resolve) => setTimeout(resolve, delay));
     console.log(`Making new request for request ${req.url}`);
     newRes = await rateLimitRequest(rateLimitReq, path);
   }
@@ -47,6 +73,7 @@ export function ldAPIPostRequest(
         "Content-Type": "application/json",
         'User-Agent': 'Project-Migrator-Script',
         "Authorization": apiKey,
+        "LD-API-Version": apiVersion,
       },
       body: JSON.stringify(body),
     },
@@ -67,6 +94,7 @@ export function ldAPIPatchRequest(
       headers: {
         "Content-Type": "application/json",
         "Authorization": apiKey,
+        "LD-API-Version": apiVersion,
       },
       body: JSON.stringify(body),
     },
@@ -114,6 +142,7 @@ export function ldAPIRequest(apiKey: string, domain: string, path: string) {
       headers: {
         "Authorization": apiKey,
         'User-Agent': 'launchdarkly-project-migrator-script',
+        "LD-API-Version": apiVersion,
       },
     },
   );
@@ -123,7 +152,7 @@ export function ldAPIRequest(apiKey: string, domain: string, path: string) {
 
 async function writeJson(filePath: string, o: any) {
   try {
-    await Deno.writeTextFile(filePath, JSON.stringify(o));
+    await Deno.writeTextFile(filePath, JSON.stringify(o, null, 2));
   } catch (e) {
     console.log(e);
   }
