@@ -61,7 +61,7 @@ deno run --allow-env --allow-read --allow-net --allow-write migrate.ts -p <SOURC
   * Flag prerequisites
   * Flag individual targets
   * Flag attribute-based targeting rules
-* Standard User Segments (no Big Segments)
+* Standard User Segments (no [Larger list-based segments](https://launchdarkly.com/docs/home/flags/segment-types#larger-list-based-segments))
 
 ### Pointing to a different instance
 
