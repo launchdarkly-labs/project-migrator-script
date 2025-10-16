@@ -1,3 +1,6 @@
+> [!CAUTION]
+> This repository is no longer maintained. Please use <a href="https://github.com/launchdarkly-labs/ld-migration-scripts">@launchdarkly-labs/ld-migration-scripts</a> instead.
+
 # Project Migrator
 
 ### Requirements
