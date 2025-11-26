@@ -1,3 +1,13 @@
 {
-  "deno.enable": true
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": false,
+  "deno.config": "./deno.json",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "always"
+  },
+  "typescript.tsdk": "deno",
+  "typescript.enable": false,
+  "javascript.validate.enable": false
 }

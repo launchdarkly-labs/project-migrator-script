@@ -8,35 +8,32 @@ import {
   ldAPIPatchRequest,
   ldAPIPostRequest,
   rateLimitRequest,
-  delay
-} from "./utils.ts";
-import * as Colors from "https://deno.land/std/fmt/colors.ts";
-
-// Uncommented these give an import error due to axios
-// import {
-//   EnvironmentPost,
-//   Project,
-//   ProjectPost,
-//   FeatureFlagBody
-// } from "https://github.com/launchdarkly/api-client-typescript/raw/main/api.ts";
+  // delay
+} from "../utils/utils.ts";
+import * as Colors from "https://deno.land/std@0.149.0/fmt/colors.ts";
 
 interface Arguments {
   projKeySource: string;
   projKeyDest: string;
   apikey: string;
   domain: string;
+  assignMaintainerIds: boolean;
 }
 
-let inputArgs: Arguments = yargs(Deno.args)
+const inputArgs: Arguments = (yargs(Deno.args)
   .alias("p", "projKeySource")
   .alias("d", "projKeyDest")
   .alias("k", "apikey")
   .alias("u", "domain")
-  .default("u", "app.launchdarkly.com").argv;
+  .alias("m", "assignMaintainerIds")
+  .default("u", "app.launchdarkly.com")
+  .default("m", false)
+  .demandOption(["p", "d", "k"])
+  .parse() as unknown) as Arguments;
 
 // Project Data //
 const projectJson = await getJson(
-  `./source/project/${inputArgs.projKeySource}/project.json`,
+  `./data/source/project/${inputArgs.projKeySource}/project.json`,
 );
 
 const buildEnv: Array<any> = [];
@@ -86,9 +83,9 @@ await projResp.json();
 
 for (const env of projRep.environments.items) {
   const segmentData = await getJson(
-    `./source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
+    `./data/source/project/${inputArgs.projKeySource}/segment-${env.key}.json`,
   );
-  
+
   // We are ignoring big segments/synced segments for now
   for (const segment of segmentData.items) {
     if (segment.unbounded == true) {
@@ -115,6 +112,7 @@ for (const env of projRep.environments.items) {
 
     const segmentResp = await rateLimitRequest(
       post,
+      'segments'
     );
 
     const segmentStatus = await segmentResp.status;
@@ -148,6 +146,7 @@ for (const env of projRep.environments.items) {
         `segments/${inputArgs.projKeyDest}/${env.key}/${newSegment.key}`,
         sgmtPatches,
       ),
+      'segments'
     );
 
     const segPatchStatus = patchRules.statusText;
@@ -160,10 +159,17 @@ for (const env of projRep.environments.items) {
 
 // Flag Data //
 const flagList: Array<string> = await getJson(
-  `./source/project/${inputArgs.projKeySource}/flags.json`,
+  `./data/source/project/${inputArgs.projKeySource}/flags.json`,
 );
 
 const flagsDoubleCheck: string[] = [];
+
+interface Variation {
+  _id: string;
+  value: any;
+  name?: string;
+  description?: string;
+}
 
 // Creating Global Flags //
 for (const [index, flagkey] of flagList.entries()) {
@@ -172,10 +178,10 @@ for (const [index, flagkey] of flagList.entries()) {
   console.log(`Reading flag ${index + 1} of ${flagList.length} : ${flagkey}`);
 
   const flag = await getJson(
-    `./source/project/${inputArgs.projKeySource}/flags/${flagkey}.json`,
+    `./data/source/project/${inputArgs.projKeySource}/flags/${flagkey}.json`,
   );
 
-  const newVariations = flag.variations.map(({ _id, ...rest }) => rest);
+  const newVariations = flag.variations.map(({ _id, ...rest }: Variation) => rest);
 
   const newFlag: any = {
     key: flag.key,
@@ -183,8 +189,19 @@ for (const [index, flagkey] of flagList.entries()) {
     variations: newVariations,
     temporary: flag.temporary,
     tags: flag.tags,
-    description: flag.description
+    description: flag.description,
+    maintainerId: null  // Set to null by default to prevent API from assigning token owner
   };
+
+  // Only assign maintainerId if explicitly requested and mapping exists
+  if (inputArgs.assignMaintainerIds && flag.maintainerId) {
+    newFlag.maintainerId = flag.maintainerId;
+    console.log(`\tPreserving maintainer: ${flag.maintainerId} for flag: ${flag.key}`);
+  } else {
+    // Ensure maintainerId is null if no mapping or not requested
+    newFlag.maintainerId = null;
+    console.log(`\tNo maintainer assigned for flag: ${flag.key}`);
+  }
 
   if (flag.clientSideAvailability) {
     newFlag.clientSideAvailability = flag.clientSideAvailability;
@@ -209,11 +226,15 @@ for (const [index, flagkey] of flagList.entries()) {
       `flags/${inputArgs.projKeyDest}`,
       newFlag,
     ),
+    'flags'
   );
   if (flagResp.status == 200 || flagResp.status == 201) {
     console.log("\tFlag created");
   } else {
     console.log(`Error for flag ${newFlag.key}: ${flagResp.status}`);
+    const errorText = await flagResp.text();
+    console.log(`Error details: ${errorText}`);
+    console.log(`Request payload: ${JSON.stringify(newFlag, null, 2)}`);
   }
 
   // Add flag env settings
@@ -235,12 +256,12 @@ for (const [index, flagkey] of flagList.entries()) {
       .reduce((cur, key) => {
         return Object.assign(cur, { [key]: flagEnvData[key] });
       }, {});
-    
+
 
     Object.keys(parsedData)
       .map((key) => {
         if (key == "rules") {
-          patchReq.push(...buildRules(parsedData[key], "environments/" + env));  
+          patchReq.push(...buildRules(parsedData[key], "environments/" + env));
         } else {
           patchReq.push(
             buildPatch(
@@ -249,12 +270,12 @@ for (const [index, flagkey] of flagList.entries()) {
               parsedData[key],
             ),
           );
-          
+
         }
       });
-      await makePatchCall(flag.key, patchReq, env);
-      
-      console.log(`\tFinished patching flag ${flagkey} for env ${env}`);
+    await makePatchCall(flag.key, patchReq, env);
+
+    console.log(`\tFinished patching flag ${flagkey} for env ${env}`);
   }
 
 }
@@ -270,7 +291,7 @@ projectJson.environments.items.forEach((env: any) => {
 //const envList: string[] = ["test"];
 
 
-async function makePatchCall(flagKey, patchReq, env){
+async function makePatchCall(flagKey: string, patchReq: any[], env: string) {
   const patchFlagReq = await rateLimitRequest(
     ldAPIPatchRequest(
       inputArgs.apikey,
@@ -278,9 +299,10 @@ async function makePatchCall(flagKey, patchReq, env){
       `flags/${inputArgs.projKeyDest}/${flagKey}`,
       patchReq,
     ),
+    'flags'
   );
   const flagPatchStatus = await patchFlagReq.status;
-  if (flagPatchStatus > 200){
+  if (flagPatchStatus > 200) {
     flagsDoubleCheck.push(flagKey)
     consoleLogger(
       flagPatchStatus,
@@ -291,7 +313,7 @@ async function makePatchCall(flagKey, patchReq, env){
   if (flagPatchStatus == 400) {
     console.log(patchFlagReq)
   }
-  
+
   consoleLogger(
     flagPatchStatus,
     `\tPatching ${flagKey} with environment [${env}] specific configuration, Status: ${flagPatchStatus}`,
@@ -300,7 +322,7 @@ async function makePatchCall(flagKey, patchReq, env){
   return flagsDoubleCheck;
 }
 
-if(flagsDoubleCheck.length > 0) {
+if (flagsDoubleCheck.length > 0) {
   console.log("There are a few flags to double check as they have had an error or warning on the patch")
   flagsDoubleCheck.forEach((flag) => {
     console.log(` - ${flag}`)
