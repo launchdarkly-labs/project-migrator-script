@@ -40,29 +40,60 @@ await writeSourceData(projPath, "project", projData);
 // Segment Data //
 
 if (projData.environments.items.length > 0) {
-  
+
   console.log(`Found ${projData.environments.items.length} environments`);
 
   projData.environments.items.forEach(async (env: any) => {
 
     console.log(`Getting Segments for environment: ${env.key}`);
 
-    const segmentResp = await fetch(
-      ldAPIRequest(
-        inputArgs.apikey,
-        inputArgs.domain,
-        `segments/${inputArgs.projKey}/${env.key}`,
-      ),
-    );
-    if (segmentResp == null) {
-      console.log("Failed getting Segments");
-      Deno.exit(1);
-    }
-    const segmentData = await segmentResp.json();
+    const segmentPageSize: number = 20;
+    let segmentOffset: number = 0;
+    let moreSegments: boolean = true;
+    const allSegments: any[] = [];
 
-    await writeSourceData(projPath, `segment-${env.key}`, segmentData);
-    const end = Date.now() + 2_000;
-    while (Date.now() < end);
+    while (moreSegments) {
+      const segmentResp = await fetch(
+        ldAPIRequest(
+          inputArgs.apikey,
+          inputArgs.domain,
+          `segments/${inputArgs.projKey}/${env.key}?limit=${segmentPageSize}&offset=${segmentOffset}`,
+        ),
+      );
+      if (segmentResp == null) {
+        console.log("Failed getting Segments");
+        Deno.exit(1);
+      }
+      const segmentData = await segmentResp.json();
+
+      console.log(
+        `Building segment list for ${env.key}: ${
+          allSegments.length + segmentData.items.length
+        } of ${segmentData.totalCount} segments`
+      );
+
+      allSegments.push(...segmentData.items);
+
+      if (allSegments.length >= segmentData.totalCount) {
+        moreSegments = false;
+      } else {
+        segmentOffset += segmentPageSize;
+      }
+    }
+
+    console.log(
+      `Found ${allSegments.length} segments for environment: ${env.key}`
+    );
+
+    const completeSegmentData = {
+      items: allSegments,
+      totalCount: allSegments.length,
+      _links: {
+        self: { href: `/api/v2/segments/${inputArgs.projKey}/${env.key}` },
+      },
+    };
+
+    await writeSourceData(projPath, `segment-${env.key}`, completeSegmentData);
   });
 }
 
